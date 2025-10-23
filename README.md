@@ -11,6 +11,7 @@ A Docker-based web application for generating Certificate Signing Requests (CSR)
 - 📊 **SSL Version Verification** - Displays and verifies current OpenSSL version
 - 🔍 **CSR Verification** - Built-in CSR validation tool
 - 🐳 **Docker-based** - Containerized for easy deployment
+- ⚡ **One-Command Setup** - Clone and run with `./run.sh` - that's it!
 - 🤖 **Automated Updates** - Dependabot integration for Docker image updates
 - ✅ **CI/CD Pipeline** - Automated testing with GitHub Actions
 - 💾 **Download Support** - Download generated CSR and private keys
@@ -18,32 +19,74 @@ A Docker-based web application for generating Certificate Signing Requests (CSR)
 
 ## Quick Start
 
-### Using Docker Compose (Recommended)
+### 🎯 Recommended: One-Line Setup
+
+**Just clone and run:**
 
 ```bash
-# Clone the repository
 git clone https://github.com/FlaccidFacade/csr-generator.git
 cd csr-generator
-
-# Start the application
-docker-compose up -d
-
-# Access the web interface
-open http://localhost:5000
+./run.sh
 ```
 
-### Using Docker
+This single command:
+- ✅ Checks Docker installation
+- ✅ Builds the image automatically
+- ✅ Creates output directory
+- ✅ Starts the container
+- ✅ Shows access URL and helpful commands
+
+**Access:** http://localhost:5000
+
+---
+
+### Alternative Options
+
+<details>
+<summary><strong>Using Make</strong> (if you have make installed)</summary>
 
 ```bash
-# Build the image
+git clone https://github.com/FlaccidFacade/csr-generator.git
+cd csr-generator
+make run       # Build and run in one command
+
+# Additional commands:
+make logs      # View logs
+make stop      # Stop container
+make start     # Start container
+make restart   # Restart container
+make clean     # Remove everything
+make help      # Show all commands
+```
+</details>
+
+<details>
+<summary><strong>Using Docker Compose</strong></summary>
+
+```bash
+git clone https://github.com/FlaccidFacade/csr-generator.git
+cd csr-generator
+docker-compose up -d
+```
+
+Access at http://localhost:5000
+
+Stop with: `docker-compose down`
+</details>
+
+<details>
+<summary><strong>Using Docker Directly</strong></summary>
+
+```bash
+# Build
 docker build -t csr-generator .
 
-# Run the container
-docker run -d -p 5000:5000 -v $(pwd)/output:/app/output csr-generator
-
-# Access the web interface
-open http://localhost:5000
+# Run
+docker run -d -p 5000:5000 -v $(pwd)/output:/app/output --name csr-generator csr-generator
 ```
+
+Access at http://localhost:5000
+</details>
 
 ## Usage
 

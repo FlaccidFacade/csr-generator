@@ -1,0 +1,96 @@
+name: CI - Build and Test Docker Image
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      run: |
+        docker build -t csr-generator:test .
+        
+    - name: Test Docker image
+      run: |
+        # Start container in detached mode
+        docker run -d --name csr-test -p 5000:5000 csr-generator:test
+        
+        # Wait for container to be ready
+        sleep 10
+        
+        # Check if container is running
+        docker ps | grep csr-test
+        
+        # Test SSL version endpoint
+        curl -f http://localhost:5000/api/ssl-version || exit 1
+        
+        # Test main page
+        curl -f http://localhost:5000/ || exit 1
+        
+        echo "✅ All tests passed!"
+        
+    - name: Verify OpenSSL version
+      run: |
+        # Check OpenSSL version in container
+        docker exec csr-test openssl version
+        
+        # Verify it's OpenSSL 3.x or later
+        VERSION=$(docker exec csr-test openssl version | grep -oP 'OpenSSL \K[0-9]+')
+        if [ "$VERSION" -ge 3 ]; then
+          echo "✅ OpenSSL version is up to date (3.x or later)"
+        else
+          echo "⚠️ Warning: OpenSSL version might be outdated"
+        fi
+        
+    - name: Test CSR generation
+      run: |
+        # Test CSR generation API
+        curl -X POST http://localhost:5000/api/generate-csr \
+          -H "Content-Type: application/json" \
+          -d '{
+            "commonName": "test.example.com",
+            "organization": "Test Org",
+            "city": "Test City",
+            "state": "Test State",
+            "country": "US",
+            "keySize": "2048"
+          }' | grep -q "success" && echo "✅ CSR generation works!" || exit 1
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        docker stop csr-test || true
+        docker rm csr-test || true
+        
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'

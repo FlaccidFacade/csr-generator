@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSR Generator - SSL Certificate Signing Request Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 CSR Generator</h1>
+            <p class="subtitle">Generate Certificate Signing Requests with the Latest OpenSSL</p>
+        </header>
+
+        <div class="ssl-info">
+            <h3>SSL Library Information</h3>
+            <div class="info-box">
+                <p><strong>Version:</strong> <span id="ssl-version">{{ ssl_info.full_version }}</span></p>
+                <p><strong>Status:</strong> <span class="status-badge" id="ssl-status">{{ ssl_info.status }}</span></p>
+            </div>
+            <button class="btn-secondary" onclick="refreshSSLInfo()">🔄 Refresh SSL Info</button>
+        </div>
+
+        <div class="form-section">
+            <h2>Generate New CSR</h2>
+            <form id="csr-form">
+                <div class="form-group">
+                    <label for="commonName">Common Name (CN) *</label>
+                    <input type="text" id="commonName" name="commonName" placeholder="example.com or *.example.com" required>
+                    <small>The fully qualified domain name (FQDN) of your server</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="organization">Organization (O)</label>
+                        <input type="text" id="organization" name="organization" placeholder="Your Company Inc.">
+                    </div>
+                    <div class="form-group">
+                        <label for="organizationalUnit">Organizational Unit (OU)</label>
+                        <input type="text" id="organizationalUnit" name="organizationalUnit" placeholder="IT Department">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">City/Locality (L)</label>
+                        <input type="text" id="city" name="city" placeholder="San Francisco">
+                    </div>
+                    <div class="form-group">
+                        <label for="state">State/Province (ST)</label>
+                        <input type="text" id="state" name="state" placeholder="California">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="country">Country Code (C)</label>
+                        <input type="text" id="country" name="country" placeholder="US" maxlength="2" pattern="[A-Z]{2}">
+                        <small>Two-letter ISO country code (e.g., US, GB, CA)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="admin@example.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="keySize">Key Size</label>
+                    <select id="keySize" name="keySize">
+                        <option value="2048" selected>2048 bits (Standard)</option>
+                        <option value="3072">3072 bits (High Security)</option>
+                        <option value="4096">4096 bits (Maximum Security)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary">🔑 Generate CSR</button>
+            </form>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Generating CSR and Private Key...</p>
+        </div>
+
+        <div id="result" class="result" style="display: none;">
+            <h2>✅ CSR Generated Successfully</h2>
+            
+            <div class="output-section">
+                <h3>Certificate Signing Request (CSR)</h3>
+                <textarea id="csr-output" readonly></textarea>
+                <button class="btn-secondary" onclick="copyToClipboard('csr-output')">📋 Copy CSR</button>
+                <button class="btn-secondary" onclick="downloadFile('csr-output', 'csr')">💾 Download CSR</button>
+            </div>
+
+            <div class="output-section">
+                <h3>Private Key</h3>
+                <div class="warning-box">
+                    ⚠️ <strong>Important:</strong> Keep this private key secure! Never share it publicly.
+                </div>
+                <textarea id="key-output" readonly></textarea>
+                <button class="btn-secondary" onclick="copyToClipboard('key-output')">📋 Copy Private Key</button>
+                <button class="btn-secondary" onclick="downloadFile('key-output', 'key')">💾 Download Private Key</button>
+            </div>
+
+            <div class="output-section">
+                <h3>CSR Verification</h3>
+                <pre id="verification-output"></pre>
+            </div>
+
+            <button class="btn-primary" onclick="resetForm()">Generate Another CSR</button>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <h3>❌ Error</h3>
+            <p id="error-message"></p>
+            <button class="btn-secondary" onclick="hideError()">Close</button>
+        </div>
+
+        <div class="verify-section">
+            <h2>Verify Existing CSR</h2>
+            <textarea id="verify-csr-input" placeholder="Paste your CSR here to verify it..."></textarea>
+            <button class="btn-secondary" onclick="verifyCsr()">🔍 Verify CSR</button>
+            <div id="verify-result" style="display: none; margin-top: 20px;">
+                <h3>Verification Result</h3>
+                <pre id="verify-output"></pre>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>CSR Generator - Powered by OpenSSL | <a href="https://github.com/FlaccidFacade/csr-generator" target="_blank">GitHub</a></p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

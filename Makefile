@@ -1,4 +1,4 @@
-.PHONY: help run start stop restart logs clean build test
+.PHONY: help run start stop restart logs clean build test cli-build cli-run
 
 help: ## Show this help message
 	@echo "CSR Generator - Docker Commands"
@@ -8,8 +8,27 @@ help: ## Show this help message
 	@echo "Targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
 
-run: ## Build and run the CSR generator (one command)
+run: ## Build and run the web interface (one command)
 	@./run.sh
+
+cli-build: ## Build the CLI version
+	@echo "Building CLI version..."
+	@docker build -f Dockerfile.cli -t csr-generator-cli .
+	@echo "✅ CLI build complete"
+
+cli-run: ## Run the CLI version (generates CSR with default values)
+	@echo "Running CLI version..."
+	@mkdir -p output
+	@docker run --rm -v $$(pwd)/output:/output csr-generator-cli
+	@echo "✅ Files saved to ./output/"
+
+cli-custom: ## Run CLI with custom domain (usage: make cli-custom DOMAIN=example.com)
+	@echo "Running CLI version with custom domain..."
+	@mkdir -p output
+	@docker run --rm -v $$(pwd)/output:/output \
+		-e COMMON_NAME="$(DOMAIN)" \
+		csr-generator-cli
+	@echo "✅ Files saved to ./output/"
 
 start: ## Start existing container
 	@echo "Starting CSR Generator..."
@@ -32,6 +51,7 @@ clean: ## Remove container and image
 	@echo "Cleaning up..."
 	@docker rm -f csr-generator 2>/dev/null || true
 	@docker rmi csr-generator 2>/dev/null || true
+	@docker rmi csr-generator-cli 2>/dev/null || true
 	@echo "✅ Cleaned up"
 
 build: ## Build the Docker image

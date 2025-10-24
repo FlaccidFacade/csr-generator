@@ -1,17 +1,17 @@
 # CSR Generator 🔐
 
-A Docker-based web application for generating Certificate Signing Requests (CSR) and private keys using the latest OpenSSL library. Generate SSL certificates with just a click!
+A Docker-based tool for generating Certificate Signing Requests (CSR) and private keys using the latest OpenSSL library. Available as both a CLI tool and web interface!
 
 [![CI](https://github.com/FlaccidFacade/csr-generator/actions/workflows/ci.yml/badge.svg)](https://github.com/FlaccidFacade/csr-generator/actions/workflows/ci.yml)
 
 ## Features
 
-- 🚀 **One-Click CSR Generation** - Easy-to-use web interface
+- 🚀 **CLI & Web Interface** - Choose your preferred method
 - 🔒 **Latest OpenSSL** - Always uses the most up-to-date OpenSSL library
 - 📊 **SSL Version Verification** - Displays and verifies current OpenSSL version
 - 🔍 **CSR Verification** - Built-in CSR validation tool
 - 🐳 **Docker-based** - Containerized for easy deployment
-- ⚡ **One-Command Setup** - Clone and run with `./run.sh` - that's it!
+- ⚡ **One-Command Setup** - Generate CSR with a single Docker command
 - 🤖 **Automated Updates** - Dependabot integration for Docker image updates
 - ✅ **CI/CD Pipeline** - Automated testing with GitHub Actions
 - 💾 **Download Support** - Download generated CSR and private keys
@@ -19,7 +19,49 @@ A Docker-based web application for generating Certificate Signing Requests (CSR)
 
 ## Quick Start
 
-### 🎯 Recommended: One-Line Setup
+### 🎯 CLI Version (Recommended for Quick CSR Generation)
+
+Generate CSR files with a **single Docker command** - no setup required:
+
+```bash
+docker run --rm -v $(pwd)/output:/output \
+  -e COMMON_NAME="example.com" \
+  -e ORGANIZATION="Example Corp" \
+  -e CITY="San Francisco" \
+  -e STATE="California" \
+  -e COUNTRY="US" \
+  ghcr.io/flaccidfacade/csr-generator:cli
+```
+
+Or build and run locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/FlaccidFacade/csr-generator.git
+cd csr-generator
+
+# Build and run
+docker build -f Dockerfile.cli -t csr-generator-cli .
+docker run --rm -v $(pwd)/output:/output \
+  -e COMMON_NAME="example.com" \
+  csr-generator-cli
+```
+
+**Output:** CSR and private key files will be saved to `./output/` directory.
+
+**Environment Variables:**
+- `COMMON_NAME` - Domain name (default: example.com)
+- `ORGANIZATION` - Organization name (default: Example Corp)
+- `ORGANIZATIONAL_UNIT` - Department (default: IT)
+- `CITY` - City (default: San Francisco)
+- `STATE` - State/Province (default: California)
+- `COUNTRY` - 2-letter country code (default: US)
+- `EMAIL` - Email address (default: admin@example.com)
+- `KEY_SIZE` - Key size in bits: 2048, 3072, or 4096 (default: 2048)
+
+---
+
+### 🌐 Web Interface Version
 
 **Just clone and run:**
 

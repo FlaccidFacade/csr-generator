@@ -1,0 +1,23 @@
+# Dockerfile.cli - CLI version for generating CSR files
+FROM python:3.11-slim
+
+# Install OpenSSL
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create working directory
+WORKDIR /app
+
+# Copy CLI script
+COPY generate-csr.sh /app/generate-csr.sh
+RUN chmod +x /app/generate-csr.sh
+
+# Create output directory
+RUN mkdir -p /output
+
+# Set environment variable for output directory
+ENV OUTPUT_DIR=/output
+
+# Run the CLI script
+ENTRYPOINT ["/app/generate-csr.sh"]

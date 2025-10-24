@@ -1,0 +1,134 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+# Set minimal permissions for the workflow
+permissions:
+  contents: read
+
+jobs:
+  test-application:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flask
+        
+    - name: Verify OpenSSL
+      run: |
+        openssl version
+        VERSION=$(openssl version | grep -oP 'OpenSSL \K[0-9]+')
+        if [ "$VERSION" -ge 3 ]; then
+          echo "✅ OpenSSL version is up to date (3.x or later)"
+        else
+          echo "⚠️ Warning: OpenSSL version might be outdated"
+        fi
+        
+    - name: Test Python application
+      run: |
+        cd app
+        python -c "from app import app, verify_latest_ssl_version; print('✅ App imports successfully')"
+        python -c "from app import verify_latest_ssl_version; import json; print('SSL Version:', json.dumps(verify_latest_ssl_version()))"
+        
+    - name: Run application tests
+      run: |
+        chmod +x test.sh
+        ./test.sh
+        
+  build-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # Allow this job to fail without failing the entire workflow
+    continue-on-error: true
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      run: |
+        docker build -t csr-generator:test .
+        
+    - name: Test Docker image
+      run: |
+        # Start container in detached mode
+        docker run -d --name csr-test -p 5000:5000 csr-generator:test
+        
+        # Wait for container to be ready
+        sleep 10
+        
+        # Check if container is running
+        docker ps | grep csr-test
+        
+        # Test SSL version endpoint
+        curl -f http://localhost:5000/api/ssl-version || exit 1
+        
+        # Test main page
+        curl -f http://localhost:5000/ || exit 1
+        
+        echo "✅ Docker tests passed!"
+        
+    - name: Test CSR generation in Docker
+      run: |
+        # Test CSR generation API
+        curl -X POST http://localhost:5000/api/generate-csr \
+          -H "Content-Type: application/json" \
+          -d '{
+            "commonName": "test.example.com",
+            "organization": "Test Org",
+            "city": "Test City",
+            "state": "Test State",
+            "country": "US",
+            "keySize": "2048"
+          }' | grep -q "success" && echo "✅ CSR generation works!" || exit 1
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        docker stop csr-test || true
+        docker rm csr-test || true
+        
+  security-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'

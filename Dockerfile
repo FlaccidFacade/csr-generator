@@ -1,5 +1,5 @@
 # Use Python slim for a lightweight image with Python pre-installed
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Install OpenSSL (usually pre-installed in Debian, but explicitly ensure it)
 RUN apt-get update && apt-get install -y --no-install-recommends \
